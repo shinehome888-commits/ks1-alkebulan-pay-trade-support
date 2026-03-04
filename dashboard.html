@@ -6,7 +6,7 @@
   <title>Trade Support Dashboard</title>
   <style>
     :root { --deep-blue: #002147; --gold: #D4AF37; --green: #4CAF50; --red: #f44336; }
-    * { margin:0; padding:0; box-sizing:border-box; font-family:Segoe UI, sans-serif; }
+    * { margin:0; padding:0; box-sizing:border-box; font-family:Segoe UI, Tahoma, Geneva, Verdana, sans-serif; }
     body { background: var(--deep-blue); color:white; padding:20px; min-height:100vh; display:flex; justify-content:center; align-items:center; }
     .container { max-width:600px; width:100%; text-align:center; }
     h1 { color: var(--gold); margin-bottom:20px; font-size:28px; }
@@ -26,7 +26,7 @@
       <h2>Welcome, <span id="tradeId">—</span>!</h2>
       <p>Check your eligibility for SME support programs.</p>
     </div>
-    <div id="eligibilityStatus"><p>Loading...</p></div>
+    <div id="eligibilityStatus"><p>Loading eligibility...</p></div>
     <button class="btn" onclick="checkEligibility()">Refresh Eligibility</button>
     <button class="btn secondary" onclick="viewHistory()">View Support History</button>
     <button class="btn logout" onclick="logout()">Logout</button>
@@ -39,7 +39,11 @@
   <script>
     const token = localStorage.getItem('ks1_token');
     const tradeId = localStorage.getItem('ks1_tradeId');
-    if (!token || !tradeId) window.location.href = 'index.html';
+
+    if (!token || !tradeId) {
+      window.location.href = 'index.html';
+    }
+
     document.getElementById('tradeId').textContent = tradeId;
 
     function logout() {
@@ -49,27 +53,45 @@
 
     async function checkEligibility() {
       const div = document.getElementById('eligibilityStatus');
-      div.innerHTML = '<p>Checking...</p>';
+      div.innerHTML = '<p>Checking eligibility...</p>';
       try {
         const res = await fetch(`https://ks1-alkebulan-pay-backend.onrender.com/eligibility/status/${tradeId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await res.json();
-        let html = `<h3>Eligibility: <strong>${data.eligible ? '✅ ELIGIBLE' : '❌ NOT ELIGIBLE'}</strong></h3>`;
-        if (data.eligible) {
-          html += `<p><strong>Max Support:</strong> GHS ${data.maxFundingAmount.toFixed(2)}</p>`;
-        } else {
-          html += `<p>You need: reputation ≥70, volume ≥GHS1,000, disputes <5.</p>`;
+
+        // Check if response is JSON
+        const contentType = res.headers.get('content-type');
+        if (!res.ok || !contentType || !contentType.includes('application/json')) {
+          throw new Error('Failed to load eligibility data. Please try again.');
         }
+
+        const data = await res.json();
+        let html = `<h3>Eligibility Status: <strong>${data.eligible ? '✅ ELIGIBLE' : '❌ NOT ELIGIBLE'}</strong></h3>`;
+        if (data.eligible) {
+          html += `<p><strong>Max Support Amount:</strong> GHS ${data.maxFundingAmount.toFixed(2)}</p>`;
+          html += `<p>Support is provided by donor or institutional partners. Contact support team to proceed.</p>`;
+        } else {
+          html += `<p>You need:</p><ul>`;
+          if (data.reputationScore < 70) html += `<li>Reputation ≥ 70 (yours: ${data.reputationScore})</li>`;
+          if (data.totalVolume < 1000) html += `<li>Trade volume ≥ GHS 1,000 (yours: GHS ${data.totalVolume})</li>`;
+          if (data.disputes >= 5) html += `<li>Fewer than 5 disputes (yours: ${data.disputes})</li>`;
+          html += `</ul>`;
+        }
+
         div.innerHTML = html;
         div.className = `status-card ${data.eligible ? 'eligible' : 'not-eligible'}`;
       } catch (err) {
-        div.innerHTML = `<p>Error: ${err.message}</p>`;
+        console.error('Eligibility error:', err);
+        div.innerHTML = `<p style="color:#ff6b6b;">⚠️ ${err.message}</p>`;
       }
     }
 
+    // Load on startup
     checkEligibility();
-    function viewHistory() { alert('History coming soon.'); }
+
+    function viewHistory() {
+      alert('Support history will be available soon.');
+    }
   </script>
 </body>
 </html>
