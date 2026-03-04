@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KS1 ALKEBULAN PAY – Trade Support</title>
+  <style>
+    :root { --deep-blue: #002147; --gold: #D4AF37; }
+    * { margin:0; padding:0; box-sizing:border-box; font-family:Segoe UI, Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: var(--deep-blue); color:white; padding:20px; min-height:100vh; display:flex; justify-content:center; align-items:center; }
+    .container { background:rgba(255,255,255,0.08); backdrop-filter:blur(10px); border-radius:16px; padding:32px; width:100%; max-width:500px; border:1px solid rgba(255,255,255,0.15); text-align:center; }
+    h1 { font-size:28px; margin-bottom:4px; }
+    .subtitle { color:#ccc; margin-bottom:24px; font-size:16px; }
+    input { width:100%; padding:12px; margin:10px 0; border-radius:8px; border:1px solid #ddd; font-size:16px; }
+    .btn { background:var(--gold); color:var(--deep-blue); border:none; border-radius:8px; padding:14px; width:100%; font-weight:bold; font-size:16px; cursor:pointer; margin:16px 0; }
+    .primary { background:white; color:var(--deep-blue); }
+    .link { color:#aaa; text-align:center; margin-top:12px; cursor:pointer; }
+    .link:hover { text-decoration:underline; }
+    .hidden { display:none; }
+    .disclaimer { margin-top:20px; padding:12px; background:rgba(212, 175, 55, 0.15); border-left:4px solid var(--gold); border-radius:0 8px 8px 0; font-size:12px; color:#ddd; text-align:left; }
+    footer { margin-top:30px; font-size:12px; color:#bbb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>KS1 ALKEBULAN PAY</h1>
+    <p class="subtitle">Trade Support • Powered By KS1EGF</p>
+
+    <div id="loginSection">
+      <input type="text" id="loginTradeId" placeholder="Your Trade ID (e.g. KS1-A1B2)" required />
+      <input type="password" id="loginPassword" placeholder="Password" required />
+      <button class="btn gold" onclick="login()">Access Dashboard</button>
+      <p class="link" onclick="showRegister()">New Registration</p>
+    </div>
+
+    <div id="registerSection" class="hidden">
+      <h2>New to KS1?</h2>
+      <p>Create your digital trade identity first.</p>
+      <button class="btn primary" onclick="goToIdentityHub()">Go to Identity Hub</button>
+      <p class="link" onclick="showLogin()">← Back to Login</p>
+    </div>
+
+    <div class="disclaimer">
+      <small>💡 Support is provided through donor-funded programs or licensed financial partners. KS1 ALKEBULAN PAY does not lend money — it only assesses eligibility based on your trade history.</small>
+    </div>
+
+    <footer>
+      <p>© 2026 KS1 ALKEBULAN PAY – A Nonprofit Project By KS1 Empire Group & Foundation (KS1EGF)</p>
+    </footer>
+  </div>
+
+  <script>
+    const API_BASE = 'https://ks1-alkebulan-pay-backend.onrender.com';
+
+    function showRegister() {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('registerSection').classList.remove('hidden');
+    }
+
+    function showLogin() {
+      document.getElementById('registerSection').classList.add('hidden');
+      document.getElementById('loginSection').classList.remove('hidden');
+    }
+
+    function goToIdentityHub() {
+      window.location.href = 'https://ks1-alkebulan-pay-identity-hub.pages.dev';
+    }
+
+    async function login() {
+      const tradeId = document.getElementById('loginTradeId').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: tradeId, password })
+        });
+        const result = await res.json();
+        if (res.ok && result.token) {
+          localStorage.setItem('ks1_token', result.token);
+          localStorage.setItem('ks1_tradeId', tradeId);
+          window.location.href = 'dashboard.html';
+        } else {
+          alert(result.message || 'Login failed');
+        }
+      } catch (err) {
+        alert('Network error. Please try again.');
+      }
+    }
+  </script>
+</body>
+</html>
